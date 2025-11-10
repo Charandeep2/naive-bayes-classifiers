@@ -1,0 +1,22 @@
+Age,Income,Education,Experience,Outcome
+25,50000,Bachelor,2,Success
+30,60000,Masters,5,Success
+22,30000,High School,1,Failure
+35,80000,PhD,10,Success
+28,45000,Bachelor,3,Failure
+40,90000,Masters,15,Success
+26,35000,High School,2,Failure
+32,70000,Masters,8,Success
+24,40000,Bachelor,1,Failure
+38,85000,PhD,12,Success
+29,55000,Bachelor,4,Success
+27,38000,High School,2,Failure
+33,72000,Masters,9,Success
+21,28000,High School,0,Failure
+36,88000,Masters,11,Success
+31,65000,Bachelor,6,Success
+23,32000,High School,1,Failure
+37,82000,PhD,13,Success
+28,48000,Bachelor,3,Failure
+34,75000,Masters,10,Success
+
