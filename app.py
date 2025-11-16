@@ -313,7 +313,7 @@ def get_sample_datasets():
             {
                 'id': 'weather',
                 'name': 'Weather Classification',
-                'description': 'Predict weather condition based on outlook, temperature, humidity, and wind',
+                'description': 'Predict whether player will play tennis based on weather conditions',
                 'feature_names': ['Outlook', 'Temperature', 'Humidity', 'Wind'],
                 'target': 'PlayTennis',
                 'data': [
@@ -409,6 +409,7 @@ def load_sample_dataset():
     try:
         data = request.json
         dataset_id = data.get('dataset_id')
+        smoothing_factor = data.get('smoothing_factor', 1.0)  # Get smoothing factor from request
         
         # Get sample datasets
         datasets_response = get_sample_datasets()
@@ -438,11 +439,12 @@ def load_sample_dataset():
         feature_names_list = dataset['feature_names']
         
         # Train model - This is the key training step
-        nb = NaiveBayes()
+        nb = NaiveBayes(smoothing_factor=smoothing_factor)  # Pass smoothing factor to model
         print(f"\n[TRAINING] Training Naive Bayes model on '{dataset['name']}' dataset...")
         print(f"  - Samples: {len(X)}")
         print(f"  - Features: {len(feature_names_list)}")
         print(f"  - Classes: {np.unique(y)}")
+        print(f"  - Smoothing Factor: {smoothing_factor}")
         
         # Fit/train the model
         nb.fit(X, y, feature_names=feature_names_list)
@@ -469,7 +471,8 @@ def load_sample_dataset():
                 'description': dataset['description'],
                 'dataset_rows': rows,  # Include the actual dataset
                 'target_column': dataset['target'],
-                'training_accuracy': float(training_accuracy)  # Include training accuracy
+                'training_accuracy': float(training_accuracy),  # Include training accuracy
+                'smoothing_factor': smoothing_factor  # Include smoothing factor in response
             }
         })
         

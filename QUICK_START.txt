@@ -1,0 +1,57 @@
+NAIVE BAYES CLASSIFIER - QUICK START GUIDE
+=========================================
+
+1. INSTALLATION
+---------------
+Option 1: Quick Install
+   pip install -r requirements.txt
+
+Option 2: Step-by-step (if Option 1 fails)
+   python -m pip install --upgrade pip setuptools wheel
+   pip install Flask numpy pandas scikit-learn plotly Werkzeug
+
+Option 3: Virtual Environment (recommended)
+   python -m venv venv
+   venv\Scripts\activate    # Windows
+   pip install -r requirements.txt
+
+2. RUN THE APPLICATION
+----------------------
+   python app.py
+
+3. ACCESS THE WEB INTERFACE
+---------------------------
+   Open your browser and go to: http://localhost:5000
+
+4. USING THE APPLICATION
+------------------------
+Training Options:
+- Upload CSV file with your data
+- Enter data manually through the interface
+- Use sample datasets (Weather, Email, Customer)
+
+Making Predictions:
+- After training, enter test data values
+- Click "Make Predictions" to see results
+- View detailed probability breakdowns
+
+Features:
+- Interactive visualizations (charts, graphs)
+- Real-time predictions
+- Performance metrics and confusion matrices
+- Class and feature distribution analysis
+
+5. TROUBLESHOOTING
+------------------
+If you encounter errors:
+- Upgrade pip: python -m pip install --upgrade pip setuptools wheel
+- For permission errors: pip install -r requirements.txt --user
+- Check INSTALL_GUIDE.md for detailed solutions
+
+6. PROJECT STRUCTURE
+--------------------
+app.py          - Main Flask application
+model.py        - Naive Bayes implementation
+templates/      - HTML files
+static/         - CSS, JavaScript files
+uploads/        - Directory for uploaded CSV files

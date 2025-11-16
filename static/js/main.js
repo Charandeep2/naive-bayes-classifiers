@@ -2,25 +2,118 @@
 
 let modelInfo = null;
 let featureNames = [];
+let currentSmoothingFactor = 1.0;  // Add smoothing factor variable
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
     initializeSmoothScroll();
+    initializeSmoothingFactor();  // Initialize smoothing factor functionality
 });
+
+// Initialize smoothing factor functionality
+function initializeSmoothingFactor() {
+    const smoothingInput = document.getElementById('smoothingFactor');
+    const applyButton = document.getElementById('applySmoothing');
+    const currentValueDisplay = document.getElementById('currentSmoothingValue');
+    const smoothingValueElements = document.querySelectorAll('.smoothing-value');
+    
+    if (smoothingInput && applyButton && currentValueDisplay) {
+        // Set initial value
+        smoothingInput.value = currentSmoothingFactor;
+        currentValueDisplay.textContent = currentSmoothingFactor.toFixed(1);
+        
+        // Update all dataset cards
+        smoothingValueElements.forEach(el => {
+            el.textContent = currentSmoothingFactor.toFixed(1);
+        });
+        
+        // Apply button event listener
+        applyButton.addEventListener('click', function() {
+            const newValue = parseFloat(smoothingInput.value);
+            if (!isNaN(newValue) && newValue >= 0) {
+                currentSmoothingFactor = newValue;
+                currentValueDisplay.textContent = currentSmoothingFactor.toFixed(1);
+                
+                // Update all dataset cards
+                smoothingValueElements.forEach(el => {
+                    el.textContent = currentSmoothingFactor.toFixed(1);
+                });
+                
+                showAlert(`Smoothing factor updated to ${currentSmoothingFactor.toFixed(1)}`, 'info');
+            } else {
+                showAlert('Please enter a valid non-negative number for smoothing factor', 'warning');
+            }
+        });
+        
+        // Also update when input changes
+        smoothingInput.addEventListener('change', function() {
+            const newValue = parseFloat(smoothingInput.value);
+            if (!isNaN(newValue) && newValue >= 0) {
+                currentSmoothingFactor = newValue;
+                currentValueDisplay.textContent = currentSmoothingFactor.toFixed(1);
+                
+                // Update all dataset cards
+                smoothingValueElements.forEach(el => {
+                    el.textContent = currentSmoothingFactor.toFixed(1);
+                });
+            }
+        });
+    }
+}
 
 // Initialize event listeners
 function initializeEventListeners() {
     // CSV Upload Form
-    document.getElementById('uploadForm').addEventListener('submit', handleCSVUpload);
-    
-    // Manual Training Button
-    document.getElementById('trainManualBtn').addEventListener('click', handleManualTraining);
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleCSVUpload);
+    }
     
     // Sample Dataset Cards
-    document.querySelectorAll('.sample-dataset-card').forEach(card => {
+    document.querySelectorAll('.sample-dataset-card[data-dataset-id]').forEach(card => {
         card.addEventListener('click', handleSampleDatasetClick);
     });
+    
+    // Upload CSV Card - Show upload form when clicked
+    const uploadCSVCard = document.getElementById('uploadCSVCard');
+    if (uploadCSVCard) {
+        uploadCSVCard.addEventListener('click', function() {
+            const uploadFormContainer = document.getElementById('uploadFormContainer');
+            if (uploadFormContainer) {
+                uploadFormContainer.style.display = 'block';
+                // Scroll to upload form
+                uploadFormContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    }
+    
+    // Close Upload Form Button
+    const closeUploadForm = document.getElementById('closeUploadForm');
+    if (closeUploadForm) {
+        closeUploadForm.addEventListener('click', function() {
+            const uploadFormContainer = document.getElementById('uploadFormContainer');
+            if (uploadFormContainer) {
+                uploadFormContainer.style.display = 'none';
+            }
+        });
+    }
+    
+    // Toggle Dataset Display
+    const toggleDatasetDisplay = document.getElementById('toggleDatasetDisplay');
+    if (toggleDatasetDisplay) {
+        toggleDatasetDisplay.addEventListener('click', function() {
+            const tableContainer = document.getElementById('datasetTableContainer');
+            const icon = this.querySelector('i');
+            if (tableContainer.style.display === 'none') {
+                tableContainer.style.display = 'block';
+                icon.className = 'fas fa-chevron-up';
+            } else {
+                tableContainer.style.display = 'none';
+                icon.className = 'fas fa-chevron-down';
+            }
+        });
+    }
 }
 
 // Handle Sample Dataset Click
@@ -52,7 +145,10 @@ async function handleSampleDatasetClick(e) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ dataset_id: datasetId })
+            body: JSON.stringify({ 
+                dataset_id: datasetId,
+                smoothing_factor: currentSmoothingFactor  // Include smoothing factor in request
+            })
         });
         
         const data = await response.json();
@@ -65,10 +161,10 @@ async function handleSampleDatasetClick(e) {
             featureNames = data.data.feature_names;
             
             // Show model status with training confirmation
-            showModelStatus(data.data, data.data.dataset_name, data.data.description);
+            showModelStatus(data.data, data.data.dataset_name, data.data.description, data.data.smoothing_factor);
             displayDatasetTable(data.data.dataset_rows, data.data.feature_names, data.data.target_column);
             
-            showAlert(`${data.data.dataset_name} loaded and model trained successfully!`, 'success');
+            showAlert(`${data.data.dataset_name} loaded and model trained successfully with smoothing factor ${data.data.smoothing_factor}!`, 'success');
             
             // Ensure visualizations are loaded
             setTimeout(() => {
@@ -84,22 +180,22 @@ async function handleSampleDatasetClick(e) {
                 if (c !== card && c.getAttribute('data-dataset-id')) {
                     const cardId = c.getAttribute('data-dataset-id');
                     if (cardId === 'weather') {
-                        c.innerHTML = `<div class="sample-icon"><i class="fas fa-cloud-sun"></i></div><h6>Weather Classification</h6><p class="small">Predict tennis play based on weather conditions</p>`;
+                        c.innerHTML = `<div class="sample-icon"><i class="fas fa-cloud-sun"></i></div><h6>Weather Classification</h6><p class="small">Predict whether player will play tennis based on weather conditions</p><div class="mt-2"><span class="badge bg-info">Smoothing: <span class="smoothing-value">${currentSmoothingFactor.toFixed(1)}</span></span></div>`;
                     } else if (cardId === 'email') {
-                        c.innerHTML = `<div class="sample-icon"><i class="fas fa-envelope"></i></div><h6>Email Spam Detection</h6><p class="small">Classify emails as spam or ham</p>`;
+                        c.innerHTML = `<div class="sample-icon"><i class="fas fa-envelope"></i></div><h6>Email Spam Detection</h6><p class="small">Classify emails as spam or ham</p><div class="mt-2"><span class="badge bg-info">Smoothing: <span class="smoothing-value">${currentSmoothingFactor.toFixed(1)}</span></span></div>`;
                     } else if (cardId === 'customer') {
-                        c.innerHTML = `<div class="sample-icon"><i class="fas fa-shopping-cart"></i></div><h6>Customer Purchase</h6><p class="small">Predict customer purchase behavior</p>`;
+                        c.innerHTML = `<div class="sample-icon"><i class="fas fa-shopping-cart"></i></div><h6>Customer Purchase</h6><p class="small">Predict customer purchase behavior</p><div class="mt-2"><span class="badge bg-info">Smoothing: <span class="smoothing-value">${currentSmoothingFactor.toFixed(1)}</span></span></div>`;
                     }
                 }
             });
             
             // Restore clicked card content with checkmark
             if (datasetId === 'weather') {
-                card.innerHTML = `<div class="sample-icon"><i class="fas fa-cloud-sun"></i></div><h6>Weather Classification <i class="fas fa-check-circle text-success ms-1"></i></h6><p class="small">Model trained and ready</p>`;
+                card.innerHTML = `<div class="sample-icon"><i class="fas fa-cloud-sun"></i></div><h6>Weather Classification <i class="fas fa-check-circle text-success ms-1"></i></h6><p class="small">Model trained and ready</p><div class="mt-2"><span class="badge bg-info">Smoothing: <span class="smoothing-value">${currentSmoothingFactor.toFixed(1)}</span></span></div>`;
             } else if (datasetId === 'email') {
-                card.innerHTML = `<div class="sample-icon"><i class="fas fa-envelope"></i></div><h6>Email Spam Detection <i class="fas fa-check-circle text-success ms-1"></i></h6><p class="small">Model trained and ready</p>`;
+                card.innerHTML = `<div class="sample-icon"><i class="fas fa-envelope"></i></div><h6>Email Spam Detection <i class="fas fa-check-circle text-success ms-1"></i></h6><p class="small">Model trained and ready</p><div class="mt-2"><span class="badge bg-info">Smoothing: <span class="smoothing-value">${currentSmoothingFactor.toFixed(1)}</span></span></div>`;
             } else if (datasetId === 'customer') {
-                card.innerHTML = `<div class="sample-icon"><i class="fas fa-shopping-cart"></i></div><h6>Customer Purchase <i class="fas fa-check-circle text-success ms-1"></i></h6><p class="small">Model trained and ready</p>`;
+                card.innerHTML = `<div class="sample-icon"><i class="fas fa-shopping-cart"></i></div><h6>Customer Purchase <i class="fas fa-check-circle text-success ms-1"></i></h6><p class="small">Model trained and ready</p><div class="mt-2"><span class="badge bg-info">Smoothing: <span class="smoothing-value">${currentSmoothingFactor.toFixed(1)}</span></span></div>`;
             }
             
             card.style.borderColor = 'rgba(139, 92, 246, 0.8)';
@@ -116,6 +212,32 @@ async function handleSampleDatasetClick(e) {
     } finally {
         card.style.opacity = '1';
         card.style.pointerEvents = 'auto';
+    }
+}
+
+// Show Model Status with smoothing factor
+function showModelStatus(data, datasetName, description, smoothingFactor) {
+    const modelStatus = document.getElementById('modelStatus');
+    const modelInfoDiv = document.getElementById('modelInfo');
+    
+    if (modelStatus && modelInfoDiv) {
+        modelInfoDiv.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Dataset:</strong> ${datasetName}</p>
+                    <p><strong>Description:</strong> ${description}</p>
+                    <p><strong>Features:</strong> ${data.n_features}</p>
+                    <p><strong>Samples:</strong> ${data.n_samples}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Classes:</strong> ${data.classes.join(', ')}</p>
+                    <p><strong>Training Accuracy:</strong> ${(data.training_accuracy * 100).toFixed(2)}%</p>
+                    <p><strong>Smoothing Factor:</strong> ${smoothingFactor.toFixed(2)}</p>
+                    <p><strong>Feature Types:</strong> ${data.feature_types.join(', ')}</p>
+                </div>
+            </div>
+        `;
+        modelStatus.style.display = 'block';
     }
 }
 
@@ -210,9 +332,27 @@ async function handleCSVUpload(e) {
             modelInfo = data.data;
             featureNames = data.data.feature_names;
             showModelStatus(data.data);
-            // Hide dataset display for CSV uploads
+            // Hide dataset display for CSV uploads (will be shown after loading probabilities)
             document.getElementById('datasetDisplay').style.display = 'none';
+            // Hide upload form after successful upload
+            const uploadFormContainer = document.getElementById('uploadFormContainer');
+            if (uploadFormContainer) {
+                uploadFormContainer.style.display = 'none';
+            }
+            // Reset form
+            document.getElementById('uploadForm').reset();
+            // Update upload card to show success
+            const uploadCSVCard = document.getElementById('uploadCSVCard');
+            if (uploadCSVCard) {
+                uploadCSVCard.innerHTML = `<div class="sample-icon"><i class="fas fa-file-upload"></i></div><h6>Upload CSV File <i class="fas fa-check-circle text-success ms-1"></i></h6><p class="small">Model trained and ready</p>`;
+                uploadCSVCard.style.borderColor = 'rgba(139, 92, 246, 0.8)';
+                uploadCSVCard.style.boxShadow = '0 0 15px rgba(139, 92, 246, 0.5)';
+            }
             showAlert('Model trained successfully!', 'success');
+            
+            // Load feature probabilities
+            await loadFeatureProbabilities();
+            
             // Ensure visualizations are loaded
             setTimeout(() => {
                 loadVisualizations();
@@ -226,112 +366,6 @@ async function handleCSVUpload(e) {
     } finally {
         hideLoading('upload');
     }
-}
-
-// Handle Manual Training
-async function handleManualTraining() {
-    const numFeatures = parseInt(document.getElementById('numFeatures').value);
-    const featureNamesInput = document.getElementById('featureNames').value;
-    const manualData = document.getElementById('manualData').value;
-    
-    if (!manualData.trim()) {
-        showAlert('Please enter training data', 'danger');
-        return;
-    }
-    
-    // Parse manual data
-    const rows = manualData.trim().split('\n').map(line => {
-        return line.split(',').map(x => x.trim());
-    });
-    
-    // Parse feature names
-    let featureNamesList = [];
-    if (featureNamesInput.trim()) {
-        featureNamesList = featureNamesInput.split(',').map(x => x.trim());
-    }
-    
-    if (featureNamesList.length !== numFeatures) {
-        featureNamesList = Array(numFeatures).fill(null).map((_, i) => 
-            featureNamesList[i] || `Feature_${i+1}`
-        );
-    }
-    
-    try {
-        showLoading('manual');
-        const response = await fetch('/api/manual-data', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                rows: rows,
-                feature_names: featureNamesList
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            modelInfo = data.data;
-            featureNames = data.data.feature_names;
-            showModelStatus(data.data);
-            // Hide dataset display for manual input
-            document.getElementById('datasetDisplay').style.display = 'none';
-            showAlert('Model trained successfully!', 'success');
-            // Ensure visualizations are loaded
-            setTimeout(() => {
-                loadVisualizations();
-            }, 500);
-            setupPredictionForm();
-        } else {
-            showAlert(data.error || 'Failed to train model', 'danger');
-        }
-    } catch (error) {
-        showAlert('Error: ' + error.message, 'danger');
-    } finally {
-        hideLoading('manual');
-    }
-}
-
-// Show Model Status
-function showModelStatus(info, datasetName = null, description = null) {
-    const statusDiv = document.getElementById('modelStatus');
-    const infoDiv = document.getElementById('modelInfo');
-    
-    let html = '';
-    if (datasetName) {
-        html += `<div class="mb-3 p-3" style="background: rgba(139, 92, 246, 0.1); border-radius: 10px; border-left: 4px solid #8b5cf6;">
-            <h6 class="mb-1"><i class="fas fa-database me-2"></i>${datasetName}</h6>
-            <p class="mb-0 small">${description}</p>
-        </div>`;
-    }
-    
-    // Show training accuracy if available
-    const trainingAccuracy = info.training_accuracy !== undefined ? info.training_accuracy : null;
-    
-    html += `
-        <div class="row">
-            <div class="col-md-6">
-                <p><strong>Samples:</strong> ${info.n_samples}</p>
-                <p><strong>Features:</strong> ${info.n_features}</p>
-                <p><strong>Feature Names:</strong> ${info.feature_names.join(', ')}</p>
-            </div>
-            <div class="col-md-6">
-                <p><strong>Classes:</strong> ${info.classes.join(', ')}</p>
-                ${trainingAccuracy !== null ? `<p><strong>Training Accuracy:</strong> <span class="badge bg-success">${(trainingAccuracy * 100).toFixed(2)}%</span></p>` : ''}
-                <p><strong>Feature Types:</strong> ${info.feature_types.map((t, i) => 
-                    `${info.feature_names[i]}: ${t}`
-                ).join(', ')}</p>
-            </div>
-        </div>
-        <div class="mt-3 p-2" style="background: rgba(16, 185, 129, 0.1); border-radius: 5px;">
-            <small><i class="fas fa-info-circle me-1"></i><strong>Model Status:</strong> Trained and ready for predictions</small>
-        </div>
-    `;
-    
-    infoDiv.innerHTML = html;
-    statusDiv.style.display = 'block';
-    statusDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // Display Dataset Table
@@ -398,32 +432,173 @@ function displayDatasetTable(rows, featureNames, targetColumn) {
     tableContainer.innerHTML = tableHtml;
     displayDiv.style.display = 'block';
     
-    // Add toggle functionality
-    const toggleBtn = document.getElementById('toggleDatasetDisplay');
-    let isExpanded = true;
-    
-    if (toggleBtn) {
-        // Remove existing event listeners by cloning
-        const newToggleBtn = toggleBtn.cloneNode(true);
-        toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
-        
-        newToggleBtn.addEventListener('click', function() {
-            isExpanded = !isExpanded;
-            const tableContainerEl = document.getElementById('datasetTableContainer');
-            if (isExpanded) {
-                tableContainerEl.style.display = 'block';
-                this.innerHTML = '<i class="fas fa-chevron-up"></i>';
-            } else {
-                tableContainerEl.style.display = 'none';
-                this.innerHTML = '<i class="fas fa-chevron-down"></i>';
-            }
-        });
-    }
-    
     // Scroll to dataset display smoothly
     setTimeout(() => {
         displayDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
+    
+    // Load and display feature probabilities after dataset is shown
+    loadFeatureProbabilities();
+}
+
+// Load Feature Probabilities
+async function loadFeatureProbabilities() {
+    const probabilitiesDiv = document.getElementById('featureProbabilities');
+    const probabilitiesContainer = document.getElementById('featureProbabilitiesContainer');
+    
+    if (!modelInfo) {
+        probabilitiesDiv.style.display = 'none';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/model-info');
+        const modelData = await response.json();
+        
+        if (modelData.error) {
+            probabilitiesDiv.style.display = 'none';
+            return;
+        }
+        
+        // Generate feature probability HTML
+        let probabilitiesHtml = `
+            <div class="row">
+                <div class="col-12">
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-info-circle me-1"></i>
+                        These are the calculated probabilities for each feature based on the trained model.
+                    </p>
+                </div>
+        `;
+        
+        // Display class probabilities
+        probabilitiesHtml += `
+            <div class="col-12 mb-4">
+                <div class="card bg-dark border-primary">
+                    <div class="card-header bg-gradient-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Class Probabilities</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+        `;
+        
+        Object.entries(modelData.class_probs).forEach(([className, prob]) => {
+            probabilitiesHtml += `
+                <div class="col-md-6 col-lg-4 mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>${className}:</span>
+                        <span class="fw-bold">${(prob * 100).toFixed(2)}%</span>
+                    </div>
+                    <div class="progress mt-1" style="height: 8px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: ${(prob * 100)}%"></div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        probabilitiesHtml += `
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Display feature probabilities for each class
+        Object.entries(modelData.feature_params).forEach(([className, features]) => {
+            probabilitiesHtml += `
+                <div class="col-12 mb-4">
+                    <div class="card bg-dark border-info">
+                        <div class="card-header bg-gradient-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>Feature Probabilities for Class: ${className}</h6>
+                        </div>
+                        <div class="card-body">
+            `;
+            
+            // Loop through features
+            for (let featIdx = 0; featIdx < modelData.n_features; featIdx++) {
+                const featureName = modelData.feature_names[featIdx];
+                const featureType = modelData.feature_types[featIdx];
+                const featureParams = features[featIdx];
+                
+                if (featureType === 'numerical') {
+                    // Numerical feature - show mean and std
+                    probabilitiesHtml += `
+                        <div class="mb-3 p-3 bg-dark rounded">
+                            <h6 class="text-primary">${featureName} <span class="badge bg-secondary">Numerical</span></h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Mean (μ):</strong> ${featureParams.mean.toFixed(4)}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Standard Deviation (σ):</strong> ${featureParams.std.toFixed(4)}</p>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    For numerical features, we use Gaussian distribution: P(x|class) = (1/√(2πσ²)) × e^(-½((x-μ)/σ)²)
+                                </small>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Categorical feature - show probability distribution
+                    probabilitiesHtml += `
+                        <div class="mb-3 p-3 bg-dark rounded">
+                            <h6 class="text-primary">${featureName} <span class="badge bg-secondary">Categorical</span></h6>
+                            <div class="row">
+                    `;
+                    
+                    Object.entries(featureParams.prob_dist).forEach(([value, prob]) => {
+                        probabilitiesHtml += `
+                            <div class="col-md-6 col-lg-4 mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>${value}:</span>
+                                    <span class="fw-bold">${(prob * 100).toFixed(2)}%</span>
+                                </div>
+                                <div class="progress mt-1" style="height: 8px;">
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: ${(prob * 100)}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    probabilitiesHtml += `
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    For categorical features, probabilities are calculated with smoothing: P(value|class) = (count + smoothing_factor) / (total + smoothing_factor × unique_values)
+                                </small>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            probabilitiesHtml += `
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        probabilitiesHtml += `
+            </div>
+        `;
+        
+        probabilitiesContainer.innerHTML = probabilitiesHtml;
+        probabilitiesDiv.style.display = 'block';
+        
+        // Scroll to feature probabilities section
+        setTimeout(() => {
+            probabilitiesDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
+        
+    } catch (error) {
+        console.error('Error loading feature probabilities:', error);
+        probabilitiesDiv.style.display = 'none';
+    }
 }
 
 // Load Visualizations
@@ -468,8 +643,7 @@ async function loadVisualizations() {
             const chartIds = [
                 'classDistributionChart',
                 ...Object.keys(data.numerical_features || {}).map(idx => `numericalChart_${idx}`),
-                ...Object.keys(data.categorical_features || {}).map(idx => `categoricalChart_${idx}`),
-                'confusionMatrixChart'
+                ...Object.keys(data.categorical_features || {}).map(idx => `categoricalChart_${idx}`)
             ].filter(id => document.getElementById(id));
             
             chartIds.forEach(chartId => {
@@ -503,8 +677,7 @@ window.addEventListener('resize', function() {
         const chartIds = [
             'classDistributionChart',
             ...Array.from(document.querySelectorAll('[id^="numericalChart_"]')).map(el => el.id),
-            ...Array.from(document.querySelectorAll('[id^="categoricalChart_"]')).map(el => el.id),
-            'confusionMatrixChart'
+            ...Array.from(document.querySelectorAll('[id^="categoricalChart_"]')).map(el => el.id)
         ].filter(id => document.getElementById(id));
         
         chartIds.forEach(chartId => {
@@ -540,8 +713,7 @@ function generateVisualizations(data) {
     const totalCharts = [
         data.class_distribution ? 1 : 0,
         data.numerical_features ? Object.keys(data.numerical_features).length : 0,
-        data.categorical_features ? Object.keys(data.categorical_features).length : 0,
-        data.performance && data.performance.confusion_matrix ? 1 : 0
+        data.categorical_features ? Object.keys(data.categorical_features).length : 0
     ].reduce((a, b) => a + b, 0);
     
     // Show message if no charts can be created
@@ -611,105 +783,67 @@ function generateVisualizations(data) {
                     xanchor: 'left',
                     y: 0.5,
                     yanchor: 'middle',
-                    bgcolor: 'rgba(0,0,0,0)',
-                    bordercolor: 'rgba(139, 92, 246, 0.3)',
-                    borderwidth: 1
+                    bgcolor: 'rgba(0,0,0,0)'
                 },
                 paper_bgcolor: 'rgba(0,0,0,0)',
                 plot_bgcolor: 'rgba(0,0,0,0)',
-                autosize: true,
-                margin: { l: 60, r: 180, t: 60, b: 60 },
-                height: 450
+                margin: { t: 50, b: 50, l: 50, r: 150 }
             };
             
-            const pieDiv = document.createElement('div');
-            pieDiv.className = 'viz-card';
-            pieDiv.id = 'classDistributionChart';
-            pieDiv.style.minHeight = '450px';
-            pieDiv.style.width = '100%';
-            grid.appendChild(pieDiv);
+            const div = document.createElement('div');
+            div.className = 'viz-card';
+            div.id = 'classDistributionChart';
+            div.style.minHeight = '400px';
+            grid.appendChild(div);
             
-            // Wait a bit for DOM to be ready and ensure Plotly is loaded
+            // Wait for DOM to be ready
             setTimeout(() => {
-                if (typeof Plotly === 'undefined') {
-                    pieDiv.innerHTML = '<div class="alert alert-danger">Plotly library not loaded. Please refresh the page.</div>';
-                    return;
-                }
-                
-                // Ensure div exists before plotting
-                if (!document.getElementById('classDistributionChart')) {
-                    console.error('Chart div not found');
-                    return;
-                }
-                
                 Plotly.newPlot('classDistributionChart', [pieTrace], pieLayout, {
                     responsive: true,
                     displayModeBar: true,
                     displaylogo: false,
-                    modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
-                    toImageButtonOptions: {
-                        format: 'png',
-                        filename: 'class_distribution',
-                        height: 600,
-                        width: 800,
-                        scale: 1
-                    }
+                    modeBarButtonsToRemove: ['pan2d', 'lasso2d']
                 }).then(() => {
-                    console.log('Pie chart rendered successfully');
-                    // Force multiple resizes to ensure proper display
-                    setTimeout(() => {
-                        try {
-                            Plotly.Plots.resize('classDistributionChart');
-                        } catch (e) {
-                            console.warn('Resize error:', e);
-                        }
-                    }, 200);
-                    setTimeout(() => {
-                        try {
-                            Plotly.Plots.resize('classDistributionChart');
-                        } catch (e) {
-                            // Ignore
-                        }
-                    }, 500);
+                    console.log('Class distribution chart rendered successfully');
                 }).catch(err => {
-                    console.error('Error plotting pie chart:', err);
-                    const errorDiv = document.getElementById('classDistributionChart');
-                    if (errorDiv) {
-                        errorDiv.innerHTML = `<div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Could not generate class distribution chart: ${err.message}
-                            <br><small>Error details: ${JSON.stringify(err)}</small>
-                        </div>`;
-                    }
+                    console.error('Error plotting class distribution chart:', err);
+                    div.innerHTML = `<div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Could not generate class distribution chart: ${err.message}
+                    </div>`;
                 });
-            }, 150);
+            }, 100);
+            
+            chartsCreated++;
         } catch (error) {
             console.error('Error processing class distribution:', error);
         }
     }
     
-    // 2. Numerical Feature Distributions
+    // 2. Numerical Features
     if (data.numerical_features) {
         Object.keys(data.numerical_features).forEach(featIdx => {
             try {
                 const feat = data.numerical_features[featIdx];
                 const traces = [];
                 
-                Object.keys(feat.classes).forEach(cls => {
+                Object.keys(feat.classes || {}).forEach((cls, idx) => {
                     const clsData = feat.classes[cls];
-                    // Filter out invalid data - more robust filtering
-                    const validData = (clsData.data || []).filter(d => {
-                        const num = Number(d);
-                        return d !== null && d !== undefined && !isNaN(num) && isFinite(num);
-                    }).map(d => Number(d));
-                    
-                    if (validData.length > 0) {
+                    if (clsData && clsData.data && clsData.data.length > 0) {
                         traces.push({
-                            x: validData,
+                            x: clsData.data,
                             type: 'histogram',
                             name: `Class ${cls}`,
                             opacity: 0.7,
-                            nbinsx: Math.min(20, Math.max(5, Math.ceil(Math.sqrt(validData.length))))
+                            marker: {
+                                color: idx === 0 ? '#667eea' : 
+                                       idx === 1 ? '#764ba2' : 
+                                       idx === 2 ? '#10b981' : 
+                                       idx === 3 ? '#f59e0b' : 
+                                       idx === 4 ? '#ef4444' : 
+                                       idx === 5 ? '#ec4899' : '#14b8a6'
+                            },
+                            hovertemplate: '<b>Class:</b> %{name}<br><b>Value:</b> %{x}<br><b>Count:</b> %{y}<extra></extra>'
                         });
                     }
                 });
@@ -718,125 +852,63 @@ function generateVisualizations(data) {
                     return; // Skip if no valid traces
                 }
                 
-                // Calculate axis ranges with safety checks
+                // Calculate max value for y-axis range
+                let maxValue = 1;
                 try {
-                    const allData = traces.flatMap(t => t.x || []);
-                    
-                    if (allData.length === 0) {
-                        return; // Skip if no data
-                    }
-                    
-                    const minVal = Math.min(...allData);
-                    const maxVal = Math.max(...allData);
-                    
-                    // Handle edge case where all values are the same
-                    let xRange = null;
-                    if (minVal === maxVal) {
-                        // If all values are the same, create a small range around the value
-                        const center = minVal;
-                        xRange = [center - 1, center + 1];
-                    } else {
-                        const range = maxVal - minVal;
-                        if (range > 0 && isFinite(range)) {
-                            xRange = [minVal - range * 0.1, maxVal + range * 0.1];
+                    traces.forEach(trace => {
+                        if (trace.x && trace.x.length > 0) {
+                            const traceMax = Math.max(...trace.x.filter(x => isFinite(x)));
+                            if (isFinite(traceMax) && traceMax > maxValue) {
+                                maxValue = traceMax;
+                            }
                         }
-                    }
-                    
-                    const layout = {
-                        title: `Distribution: ${feat.name}`,
-                        xaxis: { 
-                            title: feat.name,
-                            color: '#e0e0e0',
-                            gridcolor: 'rgba(255,255,255,0.1)',
-                            ...(xRange && isFinite(xRange[0]) && isFinite(xRange[1]) ? {
-                                range: xRange,
-                                autorange: false
-                            } : {
-                                autorange: true
-                            })
-                        },
-                        yaxis: { 
-                            title: 'Frequency',
-                            autorange: true,
-                            color: '#e0e0e0',
-                            gridcolor: 'rgba(255,255,255,0.1)'
-                        },
-                        barmode: 'overlay',
-                        font: { size: 12, family: 'Segoe UI', color: '#e0e0e0' },
-                        paper_bgcolor: 'rgba(0,0,0,0)',
-                        plot_bgcolor: 'rgba(0,0,0,0)'
-                    };
-                    
-                    const div = document.createElement('div');
-                    div.className = 'viz-card';
-                    div.id = `numericalChart_${featIdx}`;
-                    div.style.minHeight = '400px';
-                    grid.appendChild(div);
-                    
-                    // Wait for DOM to be ready
-                    setTimeout(() => {
-                        Plotly.newPlot(`numericalChart_${featIdx}`, traces, layout, {
-                            responsive: true,
-                            displayModeBar: true,
-                            displaylogo: false,
-                            modeBarButtonsToRemove: ['pan2d', 'lasso2d']
-                        }).then(() => {
-                            console.log(`Numerical chart ${featIdx} rendered successfully`);
-                        }).catch(err => {
-                            console.error(`Error plotting numerical chart ${featIdx}:`, err);
-                            div.innerHTML = `<div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                Could not generate chart for ${feat.name}: ${err.message}
-                            </div>`;
-                        });
-                    }, 100);
-                } catch (rangeError) {
-                    console.error(`Error calculating range for ${feat.name}:`, rangeError);
-                    // Use autorange as fallback
-                    const layout = {
-                        title: `Distribution: ${feat.name}`,
-                        xaxis: { 
-                            title: feat.name,
-                            autorange: true,
-                            color: '#e0e0e0',
-                            gridcolor: 'rgba(255,255,255,0.1)'
-                        },
-                        yaxis: { 
-                            title: 'Frequency',
-                            autorange: true,
-                            color: '#e0e0e0',
-                            gridcolor: 'rgba(255,255,255,0.1)'
-                        },
-                        barmode: 'overlay',
-                        font: { size: 12, family: 'Segoe UI', color: '#e0e0e0' },
-                        paper_bgcolor: 'rgba(0,0,0,0)',
-                        plot_bgcolor: 'rgba(0,0,0,0)'
-                    };
-                    
-                    const div = document.createElement('div');
-                    div.className = 'viz-card';
-                    div.id = `numericalChart_${featIdx}`;
-                    div.style.minHeight = '400px';
-                    grid.appendChild(div);
-                    
-                    // Wait for DOM to be ready
-                    setTimeout(() => {
-                        Plotly.newPlot(`numericalChart_${featIdx}`, traces, layout, {
-                            responsive: true,
-                            displayModeBar: true,
-                            displaylogo: false,
-                            modeBarButtonsToRemove: ['pan2d', 'lasso2d']
-                        }).then(() => {
-                            console.log(`Numerical chart ${featIdx} (fallback) rendered successfully`);
-                        }).catch(err => {
-                            console.error(`Error plotting numerical chart ${featIdx}:`, err);
-                            div.innerHTML = `<div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                Could not generate chart for ${feat.name}: ${err.message}
-                            </div>`;
-                        });
-                    }, 100);
+                    });
+                } catch (e) {
+                    console.error('Error calculating max value:', e);
+                    maxValue = 1;
                 }
+                
+                const layout = {
+                    title: `Numerical: ${feat.name}`,
+                    xaxis: { 
+                        title: 'Values',
+                        color: '#e0e0e0',
+                        gridcolor: 'rgba(255,255,255,0.1)'
+                    },
+                    yaxis: { 
+                        title: 'Frequency',
+                        color: '#e0e0e0',
+                        gridcolor: 'rgba(255,255,255,0.1)'
+                    },
+                    barmode: 'overlay',
+                    font: { size: 12, family: 'Segoe UI', color: '#e0e0e0' },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)'
+                };
+                
+                const div = document.createElement('div');
+                div.className = 'viz-card';
+                div.id = `numericalChart_${featIdx}`;
+                div.style.minHeight = '400px';
+                grid.appendChild(div);
+                
+                // Wait for DOM to be ready
+                setTimeout(() => {
+                    Plotly.newPlot(`numericalChart_${featIdx}`, traces, layout, {
+                        responsive: true,
+                        displayModeBar: true,
+                        displaylogo: false,
+                        modeBarButtonsToRemove: ['pan2d', 'lasso2d']
+                    }).then(() => {
+                        console.log(`Numerical chart ${featIdx} rendered successfully`);
+                    }).catch(err => {
+                        console.error(`Error plotting numerical chart ${featIdx}:`, err);
+                        div.innerHTML = `<div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Could not generate chart for ${feat.name}: ${err.message}
+                        </div>`;
+                    });
+                }, 100);
             } catch (error) {
                 console.error(`Error processing numerical feature ${featIdx}:`, error);
             }
@@ -955,131 +1027,200 @@ function generateVisualizations(data) {
         });
     }
     
-    // 4. Confusion Matrix (if available)
-    if (data.performance && data.performance.confusion_matrix) {
-        try {
-            const cm = data.performance.confusion_matrix;
-            const labels = data.performance.class_labels;
-            
-            if (!cm || !Array.isArray(cm) || cm.length === 0 || !labels || labels.length === 0) {
-                return; // Skip if invalid data
-            }
-            
-            // Ensure all values in confusion matrix are numbers
-            const validCM = cm.map(row => 
-                row.map(val => {
-                    const num = Number(val);
-                    return isFinite(num) ? num : 0;
-                })
-            );
-            
-            const trace = {
-                z: validCM,
-                x: labels,
-                y: labels,
-                type: 'heatmap',
-                colorscale: 'Blues',
-                showscale: true,
-                text: validCM.map(row => row.map(val => val.toString())),
-                texttemplate: '%{text}',
-                textfont: { color: '#ffffff' }
-            };
-            
-            const layout = {
-                title: 'Confusion Matrix',
-                xaxis: { 
-                    title: 'Predicted', 
-                    type: 'category',
-                    color: '#e0e0e0',
-                    gridcolor: 'rgba(255,255,255,0.1)'
-                },
-                yaxis: { 
-                    title: 'Actual', 
-                    type: 'category',
-                    color: '#e0e0e0',
-                    gridcolor: 'rgba(255,255,255,0.1)'
-                },
-                font: { size: 12, family: 'Segoe UI', color: '#e0e0e0' },
-                paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(0,0,0,0)'
-            };
-            
-            const div = document.createElement('div');
-            div.className = 'viz-card';
-            div.id = 'confusionMatrixChart';
-            div.style.minHeight = '400px';
-            grid.appendChild(div);
-            
-            // Wait for DOM to be ready
-            setTimeout(() => {
-                Plotly.newPlot('confusionMatrixChart', [trace], layout, {
-                    responsive: true,
-                    displayModeBar: true,
-                    displaylogo: false,
-                    modeBarButtonsToRemove: ['pan2d', 'lasso2d']
-                }).then(() => {
-                    console.log('Confusion matrix rendered successfully');
-                }).catch(err => {
-                    console.error('Error plotting confusion matrix:', err);
-                    div.innerHTML = `<div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Could not generate confusion matrix: ${err.message}
-                    </div>`;
-                });
-            }, 100);
-        } catch (error) {
-            console.error('Error processing confusion matrix:', error);
-        }
-    }
 }
 
 // Setup Prediction Form
-function setupPredictionForm() {
+async function setupPredictionForm() {
     if (!featureNames || featureNames.length === 0) return;
     
     const container = document.getElementById('predictionFormContainer');
     
-    container.innerHTML = `
-        <div class="mb-4">
-            <h4>Enter Test Data</h4>
-            <p class="text-muted">Enter values for each feature (one sample per row)</p>
-        </div>
-        <div id="predictionInputs">
-            <div class="prediction-form-row">
-                <h5>Sample 1</h5>
-                <div class="row">
-                    ${featureNames.map((name, idx) => `
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">${name}</label>
-                            <input type="text" class="form-control feature-input" 
-                                   data-feature="${idx}" placeholder="Enter ${name}">
-                        </div>
-                    `).join('')}
+    try {
+        // Fetch model information to determine feature types
+        const response = await fetch('/api/model-info');
+        const modelInfo = await response.json();
+        
+        if (modelInfo.error) {
+            console.error('Error fetching model info:', modelInfo.error);
+            return;
+        }
+        
+        // Create input fields based on feature types
+        let inputFieldsHtml = '';
+        
+        for (let i = 0; i < featureNames.length; i++) {
+            const featureName = featureNames[i];
+            const featureType = modelInfo.feature_types[i];
+            
+            if (featureType === 'categorical') {
+                // For categorical features, create dropdown with unique values
+                // Extract unique values from feature parameters
+                const uniqueValues = new Set();
+                Object.values(modelInfo.feature_params).forEach(classParams => {
+                    if (classParams[i] && classParams[i].prob_dist) {
+                        Object.keys(classParams[i].prob_dist).forEach(value => {
+                            uniqueValues.add(value);
+                        });
+                    }
+                });
+                
+                const valuesArray = Array.from(uniqueValues);
+                
+                inputFieldsHtml += `
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">${featureName} <span class="badge bg-secondary">Categorical</span></label>
+                        <select class="form-select feature-input" data-feature="${i}">
+                            <option value="">Select ${featureName}</option>
+                            ${valuesArray.map(value => `<option value="${value}">${value}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
+            } else {
+                // For numerical features, keep text input
+                inputFieldsHtml += `
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">${featureName} <span class="badge bg-secondary">Numerical</span></label>
+                        <input type="text" class="form-control feature-input" 
+                               data-feature="${i}" placeholder="Enter ${featureName}">
+                    </div>
+                `;
+            }
+        }
+        
+        container.innerHTML = `
+            <div class="mb-4">
+                <h4>Enter Test Data</h4>
+                <p class="text-muted">Enter values for each feature (one sample per row)</p>
+            </div>
+            <div id="predictionInputs">
+                <div class="prediction-form-row">
+                    <h5>Sample 1</h5>
+                    <div class="row">
+                        ${inputFieldsHtml}
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="d-flex gap-2 mb-3">
-            <button class="btn btn-primary" id="addSampleBtn">
-                <i class="fas fa-plus me-2"></i>Add Sample
-            </button>
-            <button class="btn btn-success" id="predictBtn">
-                <i class="fas fa-magic me-2"></i>Make Predictions
-            </button>
-            <button class="btn btn-secondary" id="clearBtn">
-                <i class="fas fa-trash me-2"></i>Clear
-            </button>
-        </div>
-    `;
+            <div class="d-flex gap-2 mb-3">
+                <button class="btn btn-primary" id="addSampleBtn">
+                    <i class="fas fa-plus me-2"></i>Add Sample
+                </button>
+                <button class="btn btn-success" id="predictBtn">
+                    <i class="fas fa-magic me-2"></i>Make Predictions
+                </button>
+                <button class="btn btn-secondary" id="clearBtn">
+                    <i class="fas fa-trash me-2"></i>Clear
+                </button>
+            </div>
+        `;
+        
+        // Attach event listeners after DOM is updated
+        setTimeout(attachPredictionEventListeners, 0);
+        
+    } catch (error) {
+        console.error('Error setting up prediction form:', error);
+        // Fallback to original text inputs if there's an error
+        container.innerHTML = `
+            <div class="mb-4">
+                <h4>Enter Test Data</h4>
+                <p class="text-muted">Enter values for each feature (one sample per row)</p>
+            </div>
+            <div id="predictionInputs">
+                <div class="prediction-form-row">
+                    <h5>Sample 1</h5>
+                    <div class="row">
+                        ${featureNames.map((name, idx) => `
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">${name}</label>
+                                <input type="text" class="form-control feature-input" 
+                                       data-feature="${idx}" placeholder="Enter ${name}">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mb-3">
+                <button class="btn btn-primary" id="addSampleBtn">
+                    <i class="fas fa-plus me-2"></i>Add Sample
+                </button>
+                <button class="btn btn-success" id="predictBtn">
+                    <i class="fas fa-magic me-2"></i>Make Predictions
+                </button>
+                <button class="btn btn-secondary" id="clearBtn">
+                    <i class="fas fa-trash me-2"></i>Clear
+                </button>
+            </div>
+        `;
+        
+        // Attach event listeners after DOM is updated
+        setTimeout(attachPredictionEventListeners, 0);
+    }
+}
+
+// Attach event listeners for prediction form buttons
+function attachPredictionEventListeners() {
+    const addSampleBtn = document.getElementById('addSampleBtn');
+    const predictBtn = document.getElementById('predictBtn');
+    const clearBtn = document.getElementById('clearBtn');
     
-    document.getElementById('addSampleBtn').addEventListener('click', addPredictionSample);
-    document.getElementById('predictBtn').addEventListener('click', makePredictions);
-    document.getElementById('clearBtn').addEventListener('click', clearPredictions);
+    if (addSampleBtn) {
+        // Remove existing event listeners to prevent duplicates
+        const newAddSampleBtn = addSampleBtn.cloneNode(true);
+        addSampleBtn.parentNode.replaceChild(newAddSampleBtn, addSampleBtn);
+        newAddSampleBtn.addEventListener('click', addPredictionSample);
+    }
+    
+    if (predictBtn) {
+        // Remove existing event listeners to prevent duplicates
+        const newPredictBtn = predictBtn.cloneNode(true);
+        predictBtn.parentNode.replaceChild(newPredictBtn, predictBtn);
+        newPredictBtn.addEventListener('click', makePredictions);
+    }
+    
+    if (clearBtn) {
+        // Remove existing event listeners to prevent duplicates
+        const newClearBtn = clearBtn.cloneNode(true);
+        clearBtn.parentNode.replaceChild(newClearBtn, clearBtn);
+        newClearBtn.addEventListener('click', clearPredictions);
+    }
 }
 
 // Add Prediction Sample
 function addPredictionSample() {
     const container = document.getElementById('predictionInputs');
     const sampleNum = container.children.length + 1;
+    
+    // Create a temporary element to get the feature inputs from the first sample
+    const firstSample = container.querySelector('.prediction-form-row');
+    const firstSampleInputs = firstSample.querySelectorAll('.feature-input');
+    
+    let inputFieldsHtml = '';
+    
+    firstSampleInputs.forEach(input => {
+        const featureIndex = input.getAttribute('data-feature');
+        const featureName = input.previousElementSibling ? input.previousElementSibling.textContent.replace(' Categorical', '').replace(' Numerical', '') : `Feature ${parseInt(featureIndex) + 1}`;
+        const isCategorical = input.previousElementSibling && input.previousElementSibling.querySelector('.badge') && 
+                             input.previousElementSibling.querySelector('.badge').textContent === 'Categorical';
+        
+        if (isCategorical) {
+            // For categorical features, copy the select element
+            const selectHtml = input.outerHTML.replace(/Sample 1/g, `Sample ${sampleNum}`);
+            inputFieldsHtml += `
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">${featureName} <span class="badge bg-secondary">Categorical</span></label>
+                    ${selectHtml}
+                </div>
+            `;
+        } else {
+            // For numerical features, create text input
+            inputFieldsHtml += `
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">${featureName} <span class="badge bg-secondary">Numerical</span></label>
+                    <input type="text" class="form-control feature-input" 
+                           data-feature="${featureIndex}" placeholder="Enter ${featureName}">
+                </div>
+            `;
+        }
+    });
     
     const sampleDiv = document.createElement('div');
     sampleDiv.className = 'prediction-form-row';
@@ -1091,21 +1232,24 @@ function addPredictionSample() {
             </button>
         </div>
         <div class="row">
-            ${featureNames.map((name, idx) => `
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">${name}</label>
-                    <input type="text" class="form-control feature-input" 
-                           data-feature="${idx}" placeholder="Enter ${name}">
-                </div>
-            `).join('')}
+            ${inputFieldsHtml}
         </div>
     `;
     
     container.appendChild(sampleDiv);
     
+    // Add event listener to the remove button
     sampleDiv.querySelector('.remove-sample').addEventListener('click', function() {
         sampleDiv.remove();
     });
+}
+
+// Clear Predictions
+function clearPredictions() {
+    // Instead of manually creating the form, just call setupPredictionForm again
+    setupPredictionForm();
+    
+    document.getElementById('predictionResults').innerHTML = '';
 }
 
 // Make Predictions
@@ -1228,27 +1372,6 @@ function displayPredictions(results) {
     container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// Clear Predictions
-function clearPredictions() {
-    const container = document.getElementById('predictionInputs');
-    container.innerHTML = `
-        <div class="prediction-form-row">
-            <h5>Sample 1</h5>
-            <div class="row">
-                ${featureNames.map((name, idx) => `
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">${name}</label>
-                        <input type="text" class="form-control feature-input" 
-                               data-feature="${idx}" placeholder="Enter ${name}">
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('predictionResults').innerHTML = '';
-}
-
 // Show Loading
 function showLoading(section) {
     // Implementation depends on section
@@ -1257,7 +1380,7 @@ function showLoading(section) {
         return;
     }
     
-    const buttons = document.querySelectorAll('button[type="submit"], #predictBtn, #trainManualBtn');
+    const buttons = document.querySelectorAll('button[type="submit"], #predictBtn');
     buttons.forEach(btn => {
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
@@ -1270,13 +1393,11 @@ function hideLoading(section) {
         return;
     }
     
-    const buttons = document.querySelectorAll('button[type="submit"], #predictBtn, #trainManualBtn');
+    const buttons = document.querySelectorAll('button[type="submit"], #predictBtn');
     buttons.forEach(btn => {
         btn.disabled = false;
         if (btn.id === 'predictBtn') {
             btn.innerHTML = '<i class="fas fa-magic me-2"></i>Make Predictions';
-        } else if (btn.id === 'trainManualBtn') {
-            btn.innerHTML = '<i class="fas fa-play me-2"></i>Train Model';
         } else {
             btn.innerHTML = btn.innerHTML.replace(/Loading\.\.\./g, '').replace(/<span[^>]*><\/span>/g, '');
             if (btn.textContent.includes('Upload')) {
@@ -1296,10 +1417,16 @@ function showAlert(message, type = 'info') {
     `;
     
     const container = document.querySelector('.container');
-    container.insertBefore(alertDiv, container.firstChild);
-    
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
+    if (container) {
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // Auto-dismiss after 5 seconds for success/info alerts
+        if (type === 'success' || type === 'info') {
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    }
 }
-

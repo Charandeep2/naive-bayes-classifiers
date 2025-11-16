@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropdown Styling Preview</title>
+    <style>
+        :root {
+            --primary-color: #00f5ff; /* Aqua blue */
+            --secondary-color: #fffd00; /* Neon yellow */
+            --dark-bg: #0f172a;
+            --dark-surface: #1e293b;
+            --dark-surface-2: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 30%, #001f3f 70%, #00f5ff 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(0, 31, 63, 0.6) 100%);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 245, 255, 0.4);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        select {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            border: 2px solid rgba(0, 245, 255, 0.4);
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(0, 31, 63, 0.5) 100%);
+            color: var(--text-primary);
+            font-size: 16px;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2300f5ff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 16px 12px;
+        }
+
+        select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 
+                0 0 0 0.2rem rgba(0, 245, 255, 0.3),
+                0 0 20px rgba(0, 245, 255, 0.2);
+            background: linear-gradient(135deg, rgba(0, 31, 63, 0.6) 0%, rgba(30, 41, 59, 0.8) 100%);
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        select option {
+            background: linear-gradient(135deg, var(--dark-surface) 0%, var(--dark-surface-2) 100%);
+            color: var(--text-primary);
+            border: none;
+            padding: 10px;
+        }
+
+        select option:checked {
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.3) 0%, rgba(0, 31, 63, 0.8) 100%);
+        }
+
+        .note {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(0, 245, 255, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .note h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dropdown Styling Preview</h1>
+        
+        <div class="form-group">
+            <label for="outlook">Outlook (Categorical)</label>
+            <select id="outlook">
+                <option value="">Select Outlook</option>
+                <option value="sunny">Sunny</option>
+                <option value="overcast">Overcast</option>
+                <option value="rainy">Rainy</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="temperature">Temperature (Numerical)</label>
+            <select id="temperature">
+                <option value="">Select Temperature Range</option>
+                <option value="hot">Hot</option>
+                <option value="mild">Mild</option>
+                <option value="cool">Cool</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="humidity">Humidity (Categorical)</label>
+            <select id="humidity">
+                <option value="">Select Humidity</option>
+                <option value="high">High</option>
+                <option value="normal">Normal</option>
+            </select>
+        </div>
+        
+        <div class="note">
+            <h3>Styling Information</h3>
+            <p>This preview shows how the dropdowns should appear with the correct styling:</p>
+            <ul>
+                <li>Dropdown background uses the website's gradient theme</li>
+                <li>Options have a dark background matching the site's color scheme</li>
+                <li>Selected options have a subtle aqua blue highlight</li>
+                <li>Custom dropdown arrow in aqua blue color</li>
+                <li>Focus state with glow effect</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -16,13 +16,14 @@ class NaiveBayes:
     Naive Bayes classifier supporting both numerical and categorical features
     """
 
-    def __init__(self):
+    def __init__(self, smoothing_factor=1.0):
         self.classes = None
         self.class_probs = {}
         self.feature_params = defaultdict(dict)  # {class: {feature_idx: params}}
         self.feature_types = []  # 'numerical' or 'categorical'
         self.n_features = 0
         self.feature_names = []
+        self.smoothing_factor = smoothing_factor  # Add smoothing factor
 
     def _is_numerical(self, feature_values):
         """Check if a feature is numerical"""
@@ -86,19 +87,39 @@ class NaiveBayes:
 
                 if self.feature_types[feature_idx] == 'numerical':
                     # Gaussian: store mean and std
-                    mean = np.mean(pd.to_numeric(feature_values, errors='coerce'))
-                    std = np.std(pd.to_numeric(feature_values, errors='coerce'))
-                    # Add small epsilon to avoid zero std
-                    if std < 1e-6:
+                    # Handle numerical features with better error handling
+                    try:
+                        # Convert to numeric and handle errors
+                        numeric_values = []
+                        for val in feature_values:
+                            try:
+                                numeric_val = float(val)
+                                if not np.isnan(numeric_val) and not np.isinf(numeric_val):
+                                    numeric_values.append(numeric_val)
+                            except (ValueError, TypeError):
+                                continue
+                        
+                        if len(numeric_values) > 0:
+                            mean = np.mean(numeric_values)
+                            std = np.std(numeric_values)
+                            # Add small epsilon to avoid zero std
+                            if std < 1e-6:
+                                std = 1e-6
+                        else:
+                            mean = 0.0
+                            std = 1e-6
+                    except Exception:
+                        mean = 0.0
                         std = 1e-6
+                        
                     self.feature_params[cls][feature_idx] = {'type': 'numerical', 'mean': mean, 'std': std}
                 else:
-                    # Categorical: store probability distribution
+                    # Categorical: store probability distribution with smoothing
                     unique_vals, counts = np.unique(feature_values, return_counts=True)
                     prob_dist = {}
                     for val, count in zip(unique_vals, counts):
-                        # Laplace smoothing: add 1 to avoid zero probability
-                        prob_dist[str(val)] = (count + 1) / (n_cls_samples + len(unique_vals))
+                        # Apply smoothing factor: add smoothing_factor to avoid zero probability
+                        prob_dist[str(val)] = (count + self.smoothing_factor) / (n_cls_samples + self.smoothing_factor * len(unique_vals))
                     self.feature_params[cls][feature_idx] = {'type': 'categorical', 'prob_dist': prob_dist}
 
     def _gaussian_pdf(self, x, mean, std):

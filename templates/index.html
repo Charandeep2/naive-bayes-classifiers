@@ -84,34 +84,6 @@
                     <h2 class="mb-0"><i class="fas fa-database me-2"></i>Training Data</h2>
                 </div>
                 <div class="card-body">
-                    <!-- Sample Datasets Section -->
-                    <div class="mb-4">
-                        <h5 class="mb-3"><i class="fas fa-database me-2"></i>Try Sample Datasets</h5>
-                        <div class="row" id="sampleDatasetsContainer">
-                            <div class="col-md-4 mb-3">
-                                <div class="sample-dataset-card" data-dataset-id="weather">
-                                    <div class="sample-icon"><i class="fas fa-cloud-sun"></i></div>
-                                    <h6>Weather Classification</h6>
-                                    <p class="small">Predict tennis play based on weather conditions</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <div class="sample-dataset-card" data-dataset-id="email">
-                                    <div class="sample-icon"><i class="fas fa-envelope"></i></div>
-                                    <h6>Email Spam Detection</h6>
-                                    <p class="small">Classify emails as spam or ham</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <div class="sample-dataset-card" data-dataset-id="customer">
-                                    <div class="sample-icon"><i class="fas fa-shopping-cart"></i></div>
-                                    <h6>Customer Purchase</h6>
-                                    <p class="small">Predict customer purchase behavior</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Model Status -->
                     <div id="modelStatus" class="mb-4" style="display: none;">
                         <div class="alert alert-success">
@@ -120,7 +92,82 @@
                         </div>
                     </div>
 
-                    <!-- Dataset Display - MOVED UP -->
+                    <!-- Sample Datasets and Upload CSV in Single Row -->
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i class="fas fa-dataset me-2"></i>Choose Training Data</h5>
+                        <!-- Smoothing Factor Input -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="card bg-dark border-primary">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="fas fa-sliders-h me-2"></i>Smoothing Factor</h6>
+                                        <p class="card-text small text-muted">
+                                            Adjust the smoothing factor for categorical features. 
+                                            Higher values reduce overfitting but may oversmooth.
+                                        </p>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="smoothingFactor" 
+                                                   value="1.0" min="0" step="0.1" placeholder="Smoothing Factor">
+                                            <button class="btn btn-outline-primary" type="button" id="applySmoothing">
+                                                <i class="fas fa-sync-alt me-1"></i>Apply
+                                            </button>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-info">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Current value: <span id="currentSmoothingValue">1.0</span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-3" id="sampleDatasetsContainer">
+                            <!-- Weather Classification -->
+                            <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
+                                <div class="sample-dataset-card" data-dataset-id="weather" style="height: 100%;">
+                                    <div class="sample-icon"><i class="fas fa-cloud-sun"></i></div>
+                                    <h6>Weather Classification</h6>
+                                    <p class="small">Predict tennis play based on weather conditions</p>
+                                    <div class="mt-2">
+                                        <span class="badge bg-info">Smoothing: <span class="smoothing-value">1.0</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Email Spam Detection -->
+                            <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
+                                <div class="sample-dataset-card" data-dataset-id="email" style="height: 100%;">
+                                    <div class="sample-icon"><i class="fas fa-envelope"></i></div>
+                                    <h6>Email Spam Detection</h6>
+                                    <p class="small">Classify emails as spam or ham</p>
+                                    <div class="mt-2">
+                                        <span class="badge bg-info">Smoothing: <span class="smoothing-value">1.0</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Customer Purchase -->
+                            <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
+                                <div class="sample-dataset-card" data-dataset-id="customer" style="height: 100%;">
+                                    <div class="sample-icon"><i class="fas fa-shopping-cart"></i></div>
+                                    <h6>Customer Purchase</h6>
+                                    <p class="small">Predict customer purchase behavior</p>
+                                    <div class="mt-2">
+                                        <span class="badge bg-info">Smoothing: <span class="smoothing-value">1.0</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Upload CSV File -->
+                            <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
+                                <div class="sample-dataset-card" id="uploadCSVCard" style="height: 100%;">
+                                    <div class="sample-icon"><i class="fas fa-file-upload"></i></div>
+                                    <h6>Upload CSV File</h6>
+                                    <p class="small">Upload your own CSV dataset to train the model</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dataset Display -->
                     <div id="datasetDisplay" class="mb-4" style="display: none;">
                         <div class="card border-0" style="background: var(--dark-surface-2);">
                             <div class="card-header" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%); border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
@@ -137,66 +184,50 @@
                         </div>
                     </div>
 
-                    <!-- Tab Navigation - MOVED DOWN -->
-                    <ul class="nav nav-tabs mb-4" id="dataTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button">
-                                <i class="fas fa-file-csv me-2"></i>Upload CSV
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual" type="button">
-                                <i class="fas fa-keyboard me-2"></i>Manual Input
-                            </button>
-                        </li>
-                    </ul>
+                    <!-- Feature Probability Calculations -->
+                    <div id="featureProbabilities" class="mb-4" style="display: none;">
+                        <div class="card border-0" style="background: var(--dark-surface-2);">
+                            <div class="card-header" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%); border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-calculator me-2"></i>Feature Probability Calculations
+                                </h5>
+                            </div>
+                            <div class="card-body" id="featureProbabilitiesContainer">
+                                <!-- Feature probabilities will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
 
-                    <!-- Tab Content -->
-                    <div class="tab-content" id="dataTabContent">
-                        <!-- Upload CSV Tab -->
-                        <div class="tab-pane fade show active" id="upload" role="tabpanel">
-                            <div class="upload-area p-5 text-center border rounded">
-                                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
-                                <h4>Upload Your Dataset</h4>
-                                <p class="text-muted">Select a CSV file to train the model</p>
+                    <!-- Upload Form - Appears when Upload CSV card is clicked -->
+                    <div id="uploadFormContainer" style="display: none;" class="mb-4">
+                        <div class="card border-0" style="background: var(--dark-surface-2);">
+                            <div class="card-header" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-file-csv me-2"></i>Upload CSV File
+                                    <button class="btn btn-sm btn-link float-end text-white p-0" id="closeUploadForm" style="text-decoration: none;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </h5>
+                            </div>
+                            <div class="card-body">
                                 <form id="uploadForm">
                                     <div class="mb-3">
+                                        <label for="csvFile" class="form-label">Select CSV File</label>
                                         <input type="file" class="form-control" id="csvFile" accept=".csv" required>
                                     </div>
                                     <div class="mb-3">
                                         <label for="targetColumn" class="form-label">Target Column (or leave empty for last column)</label>
                                         <input type="text" class="form-control" id="targetColumn" placeholder="e.g., 'label' or 'class'">
                                     </div>
-                                    <button type="submit" class="btn btn-primary btn-lg">
+                                    <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-upload me-2"></i>Upload & Train
                                     </button>
                                 </form>
                             </div>
                         </div>
-
-                        <!-- Manual Input Tab -->
-                        <div class="tab-pane fade" id="manual" role="tabpanel">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Number of Features</label>
-                                    <input type="number" class="form-control" id="numFeatures" min="1" value="3">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Feature Names (comma-separated)</label>
-                                    <input type="text" class="form-control" id="featureNames" placeholder="e.g., Age, Income, Education">
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Enter Training Data</label>
-                                <p class="text-muted small">Format: feature1,feature2,...,featureN,label (one row per line)</p>
-                                <textarea class="form-control" id="manualData" rows="10" 
-                                    placeholder="10,50000,High,Success&#10;8,30000,Low,Failure&#10;12,70000,High,Success"></textarea>
-                            </div>
-                            <button class="btn btn-primary btn-lg" id="trainManualBtn">
-                                <i class="fas fa-play me-2"></i>Train Model
-                            </button>
-                        </div>
                     </div>
+
+
                 </div>
             </div>
         </section>
